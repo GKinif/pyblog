@@ -1,5 +1,9 @@
 # djangoRest
 
+## Install dependencies
+
+> poetry install
+
 ## Migrate Database
 
 > poetry run manage.py migrate
@@ -19,6 +23,10 @@
 ## Create new migration
 
 > poetry run manage.py makemigrations [app name]
+
+## Add a new python dependency
+
+> poetry add [package]
 
 ## Source
 

@@ -1,33 +1,68 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.mail import send_mail
-# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.views.generic import ListView
-from .models import Post, Comment
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from taggit.models import Tag
+# from django.views.generic import ListView
+from .models import Post
 from .forms import EmailPostForm, CommentForm
 
 
-# def post_list(request):
-#     object_list = Post.published.all()
-#     paginator = Paginator(object_list, 3) # 3 posts in each page
-#     page = request.GET.get('page')
-#     try:
-#         posts = paginator.page(page)
-#     except PageNotAnInteger:
-#         # If page is not an integer deliver the first page
-#         posts = paginator.page(1)
-#     except EmptyPage:
-#         # If page is out of range deliver last page of results
-#         posts = paginator.page(paginator.num_pages)
-#     return render(request,
-#                   'blog/post/list.html',
-#                    {'page': page,
-#                     'posts': posts})
+def post_list(request, tag_slug=None):
+    object_list = Post.published.all()
 
-class PostListView(ListView):
-    queryset = Post.published.all()
-    context_object_name = 'posts'
-    paginate_by = 3
-    template_name = 'blog/post/list.html'
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+
+    paginator = Paginator(object_list, 3) # 3 posts in each page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range deliver last page of results
+        posts = paginator.page(paginator.num_pages)
+
+    return render(request,
+                  'blog/post/list.html',
+                   {'page': page,
+                    'posts': posts,
+                    'tag': tag})
+
+
+# class PostListView(ListView):
+#     # queryset = Post.published.all()
+#     context_object_name = 'posts'
+#     paginate_by = 3
+#     template_name = 'blog/post/list.html'
+#
+#     def get_queryset(self):
+#         reset_queries()
+#         object_list = Post.published.all()
+#
+#         if 'tag_slug' in self.kwargs:
+#             tag = get_object_or_404(Tag, slug=self.kwargs.get('tag_slug'))
+#             return object_list.filter(tags__in=[tag])
+#         else:
+#             return object_list
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#
+#         if 'tag_slug' in self.kwargs:
+#             # we have to fetch tag a second time here, which is not very efficient
+#             # Could reduce the amount of call by using get directly instead of get_queryset and get_context_data
+#             tag = get_object_or_404(Tag, slug=self.kwargs.get('tag_slug'))
+#             context['tag'] = tag
+#
+#         print(len(connection.queries))
+#         print(connection.queries)
+#         for query in connection.queries:
+#             print(query)
+#         return context
 
 
 def post_detail(request, year, month, day, post):
