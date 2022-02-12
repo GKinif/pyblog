@@ -3,8 +3,10 @@ from django.core.mail import send_mail
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from taggit.models import Tag
 # from django.views.generic import ListView
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+
 from .models import Post
-from .forms import EmailPostForm, CommentForm
+from .forms import EmailPostForm, CommentForm, SearchForm
 from django.db.models import Count
 
 
@@ -16,7 +18,7 @@ def post_list(request, tag_slug=None):
         tag = get_object_or_404(Tag, slug=tag_slug)
         object_list = object_list.filter(tags__in=[tag])
 
-    paginator = Paginator(object_list, 3) # 3 posts in each page
+    paginator = Paginator(object_list, 3)  # 3 posts in each page
     page = request.GET.get('page')
     try:
         posts = paginator.page(page)
@@ -29,9 +31,9 @@ def post_list(request, tag_slug=None):
 
     return render(request,
                   'blog/post/list.html',
-                   {'page': page,
-                    'posts': posts,
-                    'tag': tag})
+                  {'page': page,
+                   'posts': posts,
+                   'tag': tag})
 
 
 # class PostListView(ListView):
@@ -133,3 +135,47 @@ def post_share(request, post_id):
     return render(request, 'blog/post/share.html', {'post': post,
                                                     'form': form,
                                                     'sent': sent})
+
+
+def post_search(request):
+    form = SearchForm()
+    query = None
+    results = []
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+
+            # search_vector = SearchVector('title', 'body')
+            search_vector = SearchVector('title', weight='A') + SearchVector('body', weight='B')
+            search_query = SearchQuery(query)
+
+            # Basic full search
+            # results = Post.published.annotate(
+            #     search=SearchVector('title', 'body'),
+            # ).filter(search=query)
+
+            # Stemming and Ranking
+            # results = Post.published.annotate(
+            #     search=search_vector,
+            #     rank=SearchRank(search_vector, search_query)
+            # ).filter(search=search_query).order_by('-rank')
+
+            # Weighting queries
+            results = Post.published.annotate(
+                search=search_vector,
+                rank=SearchRank(search_vector, search_query)
+            ).filter(search=search_query).filter(rank__gte=0.3).order_by('-rank')
+
+            # Trigram similarity, needs to enable plugin in postgres => CREATE EXTENSION pg_trgm;
+            # results = Post.published.annotate(
+            #     similarity=TrigramSimilarity('title', query),
+            # ).filter(similarity__gt=0.1).order_by('-similarity')
+
+    return render(request,
+                  'blog/post/search.html',
+                  {
+                      'form': form,
+                      'query': query,
+                      'results': results
+                  })

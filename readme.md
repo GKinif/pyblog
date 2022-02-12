@@ -28,6 +28,16 @@
 
 > poetry add [package]
 
+
+## Docker Compose django postgres
+
+> https://docs.docker.com/samples/django/
+
+## Enable trigram similarity full text search in postgres
+
+> - psql blog
+> - CREATE EXTENSION pg_trgm;
+
 ## Source
 
 Django 3 by Example
