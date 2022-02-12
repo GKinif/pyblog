@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "djangorest"
+name = "djangoBlog"
 version = "0.1.0"
 description = ""
 authors = ["Guillaume Kinif <guillaume.kinif@collibra.com>"]
