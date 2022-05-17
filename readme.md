@@ -18,7 +18,7 @@
 
 ## Create new app
 
-> poetry run manage.py startapp [app name]
+> poetry run django-admin.py startapp [app name]
 
 ## Create new migration
 
